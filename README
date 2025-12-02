@@ -16,3 +16,64 @@ several of them using the reStructuredText markup notation.
 Please read the Documentation/process/changes.rst file, as it contains the
 requirements for building and running the kernel, and information about
 the problems which may result by upgrading your kernel.
+
+import os
+import socket
+import subprocess
+
+# ================================
+# CONFIGURASI
+# ================================
+TARGET_IP = "10.10.97.121"   # IP yang ingin dicek
+NETWORK_PREFIX = "10.10.97." # Prefix jaringan WiFi Anda (ubah jika perlu)
+
+# ================================
+# 1. Cek apakah IP aktif (ping)
+# ================================
+def cek_ip(ip):
+    print(f"\n[1] Mengecek apakah IP {ip} aktif...")
+    try:
+        ping_cmd = ["ping", "-n" if os.name == "nt" else "-c", "1", ip]
+        output = subprocess.check_output(ping_cmd)
+        print(f"> {ip} AKTIF / ONLINE")
+        return True
+    except subprocess.CalledProcessError:
+        print(f"> {ip} TIDAK TERDETEKSI / OFFLINE")
+        return False
+
+# ================================
+# 2. Mencari hostname perangkat
+# ================================
+def get_hostname(ip):
+    print(f"\n[2] Mencari hostname untuk IP {ip}...")
+    try:
+        host = socket.gethostbyaddr(ip)
+        print(f"> Hostname: {host[0]}")
+    except socket.herror:
+        print("> Hostname TIDAK ditemukan.")
+
+# ================================
+# 3. Scan seluruh jaringan lokal
+# ================================
+def scan_network(prefix):
+    print(f"\n[3] Scan jaringan lokal {prefix}0/24 ...")
+    aktif = []
+
+    for i in range(1, 255):
+        ip = prefix + str(i)
+        resp = os.system(f"ping -c 1 -W 1 {ip} > /dev/null 2>&1")
+        if resp == 0:
+            aktif.append(ip)
+
+    print("\nIP ONLINE dalam jaringan lokal:")
+    for ip in aktif:
+        print(" -", ip)
+
+# ================================
+# JALANKAN SEMUA
+# ================================
+cek_ip(TARGET_IP)
+get_hostname(TARGET_IP)
+scan_network(NETWORK_PREFIX)
+
+
